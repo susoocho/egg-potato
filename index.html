@@ -111,6 +111,7 @@ nav button:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid 
 .player{position:relative;background:#000;flex:0 0 auto;height:58%;min-height:300px}
 .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .player .out{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:4px 10px;border-radius:99px;text-decoration:none}
+.ttl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 16px 0}.ttl b{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.2;min-width:0}.ttl span{font-size:12px;color:var(--muted);white-space:nowrap}
 .play{border:0;cursor:pointer;font-family:inherit}
 </style>
 </head><body>
@@ -322,11 +323,12 @@ function renderFeed(v){
   document.getElementById('b-like').onclick=()=>decide(top.id,'like',c,1);
   document.getElementById('b-res').onclick=()=>decide(top.id,'reserve',c,0);
   drag(c,top.id);
-  const pb=c.querySelector('[data-play]');if(pb)pb.onclick=()=>playIn(c,top);
+  const pb=c.querySelector('[data-play]');if(pb){pb.onclick=()=>playIn(c,top);playIn(c,top);}
 }
 function playIn(card,t){const poster=card.querySelector('.poster');const p=document.createElement('div');p.className='player';
  p.innerHTML=`<iframe src="${embedUrl(t.url)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="${esc(t.title)}"></iframe><a class="out" href="${t.url}" target="_blank" rel="noopener">${t.plat} 앱으로 열기</a>`;
- poster.replaceWith(p);const b=card.querySelector('[data-play]');if(b)b.remove();}
+ poster.replaceWith(p);const b=card.querySelector('[data-play]');if(b)b.remove();
+ const h=document.createElement('div');h.className='ttl';h.innerHTML=`<b>${esc(t.title)}</b><span>${t.plat} · ${esc(t.views)}</span>`;p.after(h);}
 function decide(id,s,el,dir){
   S.status[id]=s;save();
   if(el&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
