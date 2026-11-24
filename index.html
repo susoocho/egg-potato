@@ -116,13 +116,25 @@ nav button:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid 
 .titles{display:flex;flex-direction:column;gap:6px}.tcopy{all:unset;cursor:pointer;font-size:14px;padding:8px 12px;border-radius:12px;background:var(--chip);overflow-wrap:anywhere}.tcopy.ok{background:var(--yolk);color:var(--yolk-ink)}
 .combo{display:flex;flex-direction:column;gap:4px;font-size:14px;background:var(--chip);border-radius:12px;padding:8px 12px}
 .play{border:0;cursor:pointer;font-family:inherit}
+header{padding-block:6px 4px!important;gap:8px!important}
+header h1{font-size:18px!important;flex:none!important}
+.goal{display:flex;align-items:baseline;gap:4px;flex:1;font-size:12px}
+.goal strong{display:inline!important;font-size:15px!important}
+.hnav{display:flex;align-items:center;gap:6px}.hnav .pos{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:36px;text-align:center}
+.arrow{width:32px!important;height:28px!important;line-height:26px!important;font-size:20px!important}
+.bar{height:3px!important;margin-bottom:6px!important}
+.player{height:44%!important;min-height:230px!important}
+.ttl{padding-top:8px!important}.ttl b{font-size:20px!important}
+.actions{padding-top:8px!important}.actions button{padding:11px 0!important}
+nav button{padding:6px 0 8px!important;font-size:12px!important}nav button span{font-size:16px!important}
 </style>
 </head><body>
 
 <div class="app">
   <header>
-    <h1>에그<b>포테</b> 트렌드 픽</h1>
-    <div class="goal">이번 주말 원본<strong id="goalNum">0 / 38</strong></div>
+    <h1>에그<b>포테</b></h1>
+    <span class="goal">찜 <strong id="goalNum">0 / 38</strong></span>
+    <span id="hnav" class="hnav"></span>
   </header>
   <div class="bar"><i id="goalBar"></i></div>
   <main id="view"></main>
@@ -301,6 +313,7 @@ function render(){
   document.getElementById('goalNum').textContent=`${n.picks} / 38`;
   document.getElementById('goalBar').style.width=Math.min(100,n.picks/38*100)+'%';
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===S.tab?'page':'false'));
+  document.getElementById('hnav').innerHTML='';
   const v=document.getElementById('view');
   if(S.tab==='feed')renderFeed(v);else if(S.tab==='picks')renderPicks(v);else renderReserve(v);
 }
@@ -329,9 +342,10 @@ function renderFeed(v){
   if(!q.length){v.innerHTML=`<div class="empty"><b>이번 피드는 다 골랐어요</b>찜한 건 '찜 · 촬영 리스트'에, 모자라면 예비함에서 꺼내세요.</div>`;return;}
   S.idx=((S.idx||0)%q.length+q.length)%q.length;
   const top=q[S.idx];
-  v.innerHTML=`<div class="deck"><div class="nav-row"><button class="arrow" id="b-prev" aria-label="이전">‹</button><span class="pos">${S.idx+1} / ${q.length} · 옆으로 밀어서 넘겨보기</span><button class="arrow" id="b-next" aria-label="다음">›</button></div>
+  v.innerHTML=`<div class="deck">
     <div class="stack" id="stack"></div>
     <div class="actions"><button class="b-pass" id="b-pass">패스</button><button class="b-res" id="b-res">예비함</button><button class="b-like" id="b-like">찜 ♥</button></div></div>`;
+  document.getElementById('hnav').innerHTML=`<button class="arrow" id="b-prev" aria-label="이전">‹</button><span class="pos">${S.idx+1}/${q.length}</span><button class="arrow" id="b-next" aria-label="다음">›</button>`;
   const stack=document.getElementById('stack');
   const c=document.createElement('div');c.className='card';c.innerHTML=cardHTML(top);stack.appendChild(c);
   document.getElementById('b-pass').onclick=()=>decide(top.id,'pass',c);
