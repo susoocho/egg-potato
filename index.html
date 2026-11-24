@@ -114,6 +114,7 @@ nav button:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid 
 .ttl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 16px 0}.ttl b{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.2;min-width:0}.ttl span{font-size:12px;color:var(--muted);white-space:nowrap}
 .nav-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:8px}.nav-row .pos{font-size:12px;color:var(--muted);text-align:center}.arrow{all:unset;cursor:pointer;width:38px;height:32px;border-radius:12px;background:var(--surface);border:1px solid var(--line);text-align:center;font-size:22px;line-height:30px}
 .titles{display:flex;flex-direction:column;gap:6px}.tcopy{all:unset;cursor:pointer;font-size:14px;padding:8px 12px;border-radius:12px;background:var(--chip);overflow-wrap:anywhere}.tcopy.ok{background:var(--yolk);color:var(--yolk-ink)}
+.combo{display:flex;flex-direction:column;gap:4px;font-size:14px;background:var(--chip);border-radius:12px;padding:8px 12px}
 .play{border:0;cursor:pointer;font-family:inherit}
 </style>
 </head><body>
@@ -265,6 +266,15 @@ const RESERVE = [
 ];
 function embedUrl(u){let m=u.match(/youtube\.com\/shorts\/([\w-]{11})/);if(m)return `https://www.youtube.com/embed/${m[1]}?autoplay=1&playsinline=1&rel=0`;
  m=u.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);if(m)return `https://www.tiktok.com/player/v1/${m[1]}?autoplay=1&music_info=1&description=1`;return null;}
+// 사야 하는 준비물 키 (같은 키 = 한 번 사서 같이 찍기)
+const GEAR={boomclap:['컨페티 폭죽'],skittles:['스키틀즈·M&M','안대','레몬'],shoulder:['전신 거울'],moonman:['지난 커플 영상'],
+ bites:['편의점 음식','안대'],wasabi:['와사비','초밥·만두'],deckhalls:['트리·전구','커플 니트'],payfull:['지갑·카드'],jasmin:[],tiktokdecide:[],
+ thennow:['연애 초기 사진','지난 커플 영상'],knees:['공','풍선'],pinkblack:['핑크·블랙 소품'],gems:['보석 젤리','안대'],cake:['조각 케이크'],
+ colorgame:['색종이·종이컵'],mmcheat:['스키틀즈·M&M'],bicep:[],tree:['트리·전구'],door:[]};
+function sameGear(t){const mine=GEAR[t.id]||[];const out=[];ALL.forEach(o=>{if(o.id===t.id||st(o.id)==='pass')return;const sh=(GEAR[o.id]||[]).filter(g=>mine.includes(g));if(sh.length)out.push([o,sh]);});return out;}
+function gearHTML(t){const g=sameGear(t);
+ return `<div><div class="lbl">준비물</div>${t.props.length?`<div class="row">${t.props.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>`:'<div class="meta">따로 살 것 없음</div>'}</div>
+ ${g.length?`<div><div class="lbl">같은 준비물로 같이 찍을 수 있는 영상</div><div class="combo">${g.map(([o,sh])=>`<div><b>${esc(o.title)}</b> <span class="meta">${esc(sh.join(', '))} · ${{new:'피드',like:'찜함',reserve:'예비함'}[st(o.id)]}</span></div>`).join('')}</div></div>`:''}`;}
 TRENDS.forEach(t=>t.kind='feed');RESERVE.forEach(t=>t.kind='reserve');
 const ALL=[...TRENDS,...RESERVE];const byId=Object.fromEntries(ALL.map(t=>[t.id,t]));
 
@@ -306,6 +316,7 @@ function cardHTML(t){
     <div class="row">${t.tags.map(g=>`<span class="tag${g==='급상승'?' hot':''}">${esc(g)}</span>`).join('')}</div>
     <div><div class="lbl">이 영상의 매력</div><div class="charm">${esc(t.charm)}<span class="est">추정</span></div></div>
     <div class="titles"><div class="lbl">우리 영상 제목 후보 · 눌러서 복사</div>${t.titles.map(x=>`<button class="tcopy">${esc(x)}</button>`).join('')}</div>
+    ${gearHTML(t)}
     <div><div class="lbl">뜨는 이유</div><div class="why">${esc(t.why)}</div></div>
     <div class="meta">음원: ${esc(t.sound)}</div>
     ${t.refs.length?`<div class="refs"><div class="lbl">비슷하게 터진 영상</div>${t.refs.map(r=>`<a href="${r[1]}" target="_blank" rel="noopener">${esc(r[0])}</a>`).join('')}</div>`:''}
@@ -383,6 +394,7 @@ function openShoot(id){
   document.getElementById('panel').innerHTML=`<h3>${esc(t.title)}</h3><div class="sub">음원: ${esc(t.sound)} · <a href="${t.url}" target="_blank" rel="noopener">원본 다시 보기</a></div>
     <div class="lbl">준비물</div>${t.props.length?t.props.map((p,i)=>row('p'+i,p)).join(''):'<div class="sub">따로 필요 없음</div>'}
     <div class="lbl">편집 변형 5개 (원본 1개로)</div>${t.vars.map((p,i)=>row('v'+i,`${i+1}. ${p}`)).join('')}
+    <div style="margin-top:14px">${gearHTML(t).split('</div>\n')[1]||''}</div>
     <div class="row" style="margin-top:14px"><button class="btn" id="to-res">예비함으로</button><button class="btn" id="to-pass">빼기</button></div>
     <button class="btn yolk close" id="sheet-close">닫기</button>`;
   const sh=document.getElementById('sheet');sh.hidden=false;
