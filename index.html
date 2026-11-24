@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3F2EE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>에그포테 트렌드 픽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-screen phone app. Swipe deck on top, bottom tab bar. Egg yolk = 찜, potato = 촬영. */
+:root{
+  --bg:#F3F2EE; --surface:#FFFFFF; --ink:#1D1B22; --muted:#6E6A76; --line:#E2DFD8;
+  --yolk:#FFC21A; --yolk-ink:#3A2A00; --potato:#9A6A3E; --like:#FF4D7E; --pass:#8C8896;
+  --chip:#EFEDE7; --est:#8A5CF6;
+  --display:"Do Hyeon","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141317; --surface:#1F1D24; --ink:#F2F0F5; --muted:#A29EAB; --line:#2F2C36;
+  --yolk:#FFC933; --yolk-ink:#2A1E00; --potato:#C9945F; --like:#FF6690; --pass:#7B7785;
+  --chip:#2A2730; --est:#A98BFF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141317; --surface:#1F1D24; --ink:#F2F0F5; --muted:#A29EAB; --line:#2F2C36;
+  --yolk:#FFC933; --yolk-ink:#2A1E00; --potato:#C9945F; --like:#FF6690; --pass:#7B7785;
+  --chip:#2A2730; --est:#A98BFF; color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+html{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;overflow:hidden}
+.app{height:100%;display:flex;flex-direction:column;max-width:520px;margin:0 auto}
+header{padding-block:10px 6px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px}
+header h1{font-family:var(--display);font-weight:400;font-size:24px;margin:0;letter-spacing:-.3px;flex:1}
+header h1 b{color:var(--potato);font-weight:400}
+.goal{font-size:12px;color:var(--muted);text-align:right;line-height:1.3}
+.goal strong{display:block;font-family:var(--display);font-weight:400;font-size:20px;color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:3px;background:var(--chip);margin:0 max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));overflow:hidden}
+.bar i{display:block;height:100%;background:var(--yolk);width:0;transition:width .3s}
+main{flex:1;min-height:0;overflow-y:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:4px 16px}
+nav{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);background:var(--surface);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav button{all:unset;cursor:pointer;text-align:center;padding:10px 0 12px;font-size:13px;color:var(--muted);font-weight:500}
+nav button span{display:block;font-family:var(--display);font-size:19px;line-height:1.2;font-variant-numeric:tabular-nums}
+nav button[aria-current="page"]{color:var(--ink)}
+nav button[aria-current="page"] span{color:var(--potato)}
+nav button:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--yolk);outline-offset:2px}
+
+/* deck */
+.deck{position:relative;height:100%;min-height:440px;display:flex;flex-direction:column}
+.stack{position:relative;flex:1;min-height:0}
+.card{position:absolute;inset:0;background:var(--surface);border-radius:22px;box-shadow:0 10px 30px rgba(20,10,30,.12);display:flex;flex-direction:column;overflow:hidden;touch-action:pan-y;user-select:none}
+.card.behind{transform:scale(.95) translateY(10px);opacity:.6;pointer-events:none}
+.poster{position:relative;padding:18px 18px 14px;color:#fff;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+.poster .plat{position:absolute;top:14px;left:16px;font-size:11px;font-weight:700;letter-spacing:.6px;background:rgba(0,0,0,.28);padding:3px 8px;border-radius:99px}
+.poster .views{position:absolute;top:10px;right:14px;text-align:right;font-family:var(--display);font-size:28px;line-height:1;text-shadow:0 1px 8px rgba(0,0,0,.25)}
+.poster .views small{display:block;font-family:var(--body);font-size:11px;opacity:.9}
+.poster h2{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.1;margin:0;text-wrap:balance;text-shadow:0 1px 10px rgba(0,0,0,.2)}
+.poster .en{font-size:12px;opacity:.92}
+.play{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 16px 0;padding:11px;border-radius:14px;background:var(--ink);color:var(--bg);text-decoration:none;font-weight:700;font-size:15px}
+.body{padding:12px 16px 8px;overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--chip);color:var(--ink)}
+.tag.hot{background:var(--yolk);color:var(--yolk-ink);font-weight:700}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);margin-bottom:2px}
+.charm{font-family:var(--display);font-size:19px;line-height:1.35}
+.est{font-family:var(--body);font-size:11px;color:var(--est);border:1px solid var(--est);padding:0 6px;border-radius:99px;vertical-align:2px;margin-left:4px;white-space:nowrap}
+.why{font-size:14px;color:var(--ink)}
+.meta{font-size:12px;color:var(--muted)}
+.refs a{color:var(--ink);font-size:13px}
+.refs{display:flex;flex-direction:column;gap:2px}
+.stamp{position:absolute;top:22px;font-family:var(--display);font-size:34px;padding:2px 14px;border:4px solid;border-radius:12px;opacity:0;transform:rotate(-12deg);pointer-events:none}
+.stamp.like{left:18px;color:var(--like);border-color:var(--like);background:rgba(255,255,255,.85)}
+.stamp.nope{right:18px;color:var(--pass);border-color:var(--pass);background:rgba(255,255,255,.85);transform:rotate(12deg)}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding-top:12px}
+.actions button{all:unset;cursor:pointer;text-align:center;padding:13px 0;border-radius:16px;font-weight:700;font-size:15px;background:var(--surface);border:1px solid var(--line)}
+.actions .b-like{background:var(--like);color:#fff;border-color:transparent}
+.actions .b-res{color:var(--potato)}
+.empty{text-align:center;padding:48px 12px;color:var(--muted)}
+.empty b{display:block;font-family:var(--display);font-weight:400;font-size:24px;color:var(--ink);margin-bottom:6px}
+
+/* lists */
+.sec-h{display:flex;align-items:baseline;gap:8px;margin:6px 0 10px}
+.sec-h h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0}
+.sec-h p{margin:0;font-size:12px;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;background:var(--surface);border-radius:16px;padding:10px 12px;border:1px solid var(--line)}
+.sw{width:52px;height:52px;border-radius:12px}
+.item h4{margin:0;font-size:15px;font-weight:700;line-height:1.3}
+.item .sub{font-size:12px;color:var(--muted)}
+.item .prog{font-size:12px;color:var(--potato);font-weight:700}
+.item > div{min-width:0}
+.btn{all:unset;cursor:pointer;font-size:13px;font-weight:700;padding:8px 12px;border-radius:12px;background:var(--chip);white-space:nowrap}
+.btn.yolk{background:var(--yolk);color:var(--yolk-ink)}
+.mini{display:flex;gap:6px}
+.note{font-size:12px;color:var(--muted);background:var(--chip);border-radius:12px;padding:10px 12px;margin-top:14px}
+.passed{margin-top:18px}
+.passed summary{cursor:pointer;font-size:13px;color:var(--muted)}
+
+/* shoot sheet */
+.sheet[hidden]{display:none}
+.sheet{position:fixed;inset:0;background:rgba(10,8,14,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet .panel{background:var(--surface);width:100%;max-width:520px;max-height:88%;overflow-y:auto;border-radius:22px 22px 0 0;padding-block:16px calc(20px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.panel h3{font-family:var(--display);font-weight:400;font-size:26px;margin:0 0 2px}
+.panel .sub{font-size:13px;color:var(--muted);margin-bottom:12px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.chk input{width:22px;height:22px;accent-color:var(--potato);flex:none;margin:1px 0 0}
+.chk.done span{color:var(--muted);text-decoration:line-through}
+.panel .lbl{margin-top:14px}
+.panel .close{display:block;width:100%;margin-top:16px;text-align:center;box-sizing:border-box}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.player{position:relative;background:#000;flex:0 0 auto;height:58%;min-height:300px}
+.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.player .out{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:4px 10px;border-radius:99px;text-decoration:none}
+.play{border:0;cursor:pointer;font-family:inherit}
+</style>
+</head><body>
+
+<div class="app">
+  <header>
+    <h1>에그<b>포테</b> 트렌드 픽</h1>
+    <div class="goal">이번 주말 원본<strong id="goalNum">0 / 38</strong></div>
+  </header>
+  <div class="bar"><i id="goalBar"></i></div>
+  <main id="view"></main>
+  <nav>
+    <button id="tab-feed" data-tab="feed"><span id="c-feed">0</span>트렌드 피드</button>
+    <button id="tab-picks" data-tab="picks"><span id="c-picks">0</span>찜 · 촬영 리스트</button>
+    <button id="tab-reserve" data-tab="reserve"><span id="c-reserve">0</span>예비함</button>
+  </nav>
+</div>
+<div class="sheet" id="sheet" hidden><div class="panel" id="panel"></div></div>
+
+<script>
+// 수집: 2026-11-24 · 유튜브 스튜디오 리서치(최근 30일, Shorts) + Virlo/Postdom/Sosial/Buffer 주간 트렌드 (11/18~11/23)
+const YT = id => `https://www.youtube.com/shorts/${id}`;
+const YS = q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+const TS = q => `https://www.tiktok.com/search?q=${encodeURIComponent(q)}`;
+const TRENDS = [
+{id:'boomclap',hue:[330,25],plat:'TikTok',title:'Boom Clap 컨페티 팡',en:'Boom Clap confetti pop',views:'5,710만',viewsNote:'대표 영상',
+ url:'https://www.tiktok.com/@nataliireynoldss/video/7709682900932775198',
+ tags:['유행 음원','커플 2인','급상승'],hot:true,
+ why:'이번 주 이 포맷 올린 크리에이터 수가 지난주보다 +364%. 해외 대형 커플 크리에이터들이 연달아 올리는 중이라 지금이 타이밍.',
+ charm:'비트에 딱 맞춰 터지는 한 방, 그리고 실패한 NG컷이 오히려 더 웃긴 것',
+ sound:'"Boom Clap"',
+ refs:[['5,710만 · @nataliireynoldss','https://www.tiktok.com/@nataliireynoldss/video/7709682900932775198'],['4,710만 · @sayka_chu','https://www.tiktok.com/@sayka_chu/video/7709178793071496454'],['1,120만 · @brookemonk_','https://www.tiktok.com/@brookemonk_/video/7709990282607086879']],
+ props:['컨페티 폭죽(파티 팝퍼) 10개 이상','바닥 청소용 돌돌이/청소기','단색 벽 배경'],
+ vars:['성공 한 방 클린 버전','NG 모음 몽타주','서로 얼굴에 쏘기 (반응 위주)','슬로모션 + 색 컨페티 클로즈업','핑크 vs 블루 컨페티 커플 대결']},
+{id:'skittles',hue:[275,350],plat:'YouTube',title:'스키틀즈 색 맞히기',en:'Skittles / M&M color challenge',views:'324만',viewsNote:'10일 전 · 채널 평소의 8배',
+ url:YT('SaqjRstVMLY'),tags:['색 트렌드','커플 게임'],hot:true,
+ why:'색깔 챌린지가 최근 30일 내내 여러 커플 채널에서 터지는 중 (233만, 114만, 61만). 우리 채널 1위 "Color trend"와 같은 계열.',
+ charm:'색 하나 고를 때마다 둘이 신경전하는 표정, 마지막 한 알에서 터지는 반전',
+ sound:'원본 음성 + 효과음',
+ refs:[['324만 · Courtney & Alex','https://www.youtube.com/shorts/SaqjRstVMLY'],['233만 · Colour Challenge With Him','https://www.youtube.com/shorts/_Uv_4GtqZQY'],['114만 · Skittles Color Challenge','https://www.youtube.com/shorts/pXkFaHyVi2Q'],['61만 · M&M color challenge','https://www.youtube.com/shorts/mC5zjMOW29c']],
+ props:['스키틀즈·M&M 큰 봉지 2개','흰 접시 2개','안대 2개'],
+ vars:['안대 쓰고 맛으로 색 맞히기','먼저 다 맞히기 스피드전','진 사람 벌칙 (레몬/와사비)','M&M 버전으로 재촬영','정답 색깔 옷으로 갈아입기 엔딩']},
+{id:'shoulder',hue:[200,250],plat:'TikTok',title:'어깨 들쳐메고 거울 셀카',en:'Shoulder carry mirror selfie',views:'950만',viewsNote:'대표 영상',
+ url:'https://www.tiktok.com/@marina_official/video/7709536400919514401',tags:['커플 2인','지금 정점'],hot:false,
+ why:'정점 찍고 살짝 내려오는 중(-27%). 커플 필수 포맷이라 이번 주말 안에 찍어야 함.',
+ charm:'번쩍 들어올리는 힘 자랑 + 들린 사람의 체념한 표정 대비',
+ sound:'리듬 트랙 (영상 속 음원 그대로 사용)',
+ refs:[['950만 · @marina_official','https://www.tiktok.com/@marina_official/video/7709536400919514401'],['570만 · @camilla','https://www.tiktok.com/@camilla/video/7709239122732403998'],['480만 · @the.wahab.familyy','https://www.tiktok.com/@the.wahab.familyy/video/7710718902371749134']],
+ props:['전신 거울','폰 그립'],
+ vars:['기본 버전','역할 바꾸기 (여친이 남친 들기)','실패 버전','커플 잠옷 버전','슬로 리버스']},
+{id:'moonman',hue:[220,290],plat:'TikTok',title:'My Moon My Man 소프트 공개',en:'"My Moon My Man" couple montage',views:'940만',viewsNote:'대표 영상',
+ url:'https://www.tiktok.com/@swxxella/video/7709986597134929166',tags:['유행 음원','커플 2인','급상승'],hot:true,
+ why:'이번 주 크리에이터 수 +99%, 음원 사용 영상 94만 개. 지난 촬영본으로도 만들 수 있어 촬영 부담이 적음.',
+ charm:'가사에 맞춰 조금씩 보이다 후렴에서 상대가 공개되는 설렘',
+ sound:'"My Moon My Man" 커버',
+ refs:[['940만 · @swxxella','https://www.tiktok.com/@swxxella/video/7709986597134929166'],['310만 · @robinvr30','https://www.tiktok.com/@robinvr30/video/7709086757672848672'],['200만 · @samanthaa.nicole','https://www.tiktok.com/@samanthaa.nicole/video/7708567365771971870']],
+ props:['지난 커플 영상 클립 10개','가사 자막 템플릿 (CapCut)'],
+ vars:['남친 공개 버전','여친 공개 버전','1월 vs 지금 비교','손만 보이다 공개','NG컷 몽타주']},
+{id:'bites',hue:[10,45],plat:'YouTube',title:'랜덤 한입 챌린지',en:'Random Bites challenge',views:'494만',viewsNote:'8일 전 · 채널 평소의 2배',
+ url:YT('skb-OMYbE0g'),tags:['먹방 게임','커플 2인'],hot:true,
+ why:'Random Bites 포맷이 이번 주에도 계속 새로 터짐. 2천만 구독 채널이 어제 올린 버전도 하루 만에 28만.',
+ charm:'뭐가 걸릴지 모르는 한입 + 이긴 사람이 먼저 먹는 신경전',
+ sound:'원본 음성',
+ refs:[['494만 · C&Y Bites','https://www.youtube.com/shorts/skb-OMYbE0g'],['62만 · C&Y Bites','https://www.youtube.com/shorts/6WKiqIgtnLo'],['28만 · Ethan Funny Family (1일 전)','https://www.youtube.com/shorts/VFLytFS3K5I']],
+ props:['편의점 음식 6~8종','번호 뽑기 종이','룰렛 앱'],
+ vars:['편의점 버전','한식 vs 양식','맵기 단계 버전','눈 가리고 먹기','진 사람 설거지 엔딩']},
+{id:'wasabi',hue:[95,150],plat:'YouTube',title:'와사비 룰렛',en:"Don't eat the WASABI",views:'43만',viewsNote:'4일 전',
+ url:YT('2nf2y1xBUHc'),tags:['커플 게임','반응'],hot:false,
+ why:'4일 만에 43만. 반응 표정 하나로 끝나는 포맷이라 편집 변형이 쉬움.',
+ charm:'누가 걸렸는지 숨기는 포커페이스 연기',
+ sound:'원본 음성',
+ refs:[['43만 · caden','https://www.youtube.com/shorts/2nf2y1xBUHc']],
+ props:['초밥 or 만두 6개','와사비 튜브','우유 (해독용)'],
+ vars:['초밥 버전','만두 버전','슬로모 리액션 클로즈업','둘 다 걸리는 버전','시청자 맞히기 퀴즈형']},
+{id:'deckhalls',hue:[0,140],plat:'TikTok',title:'Deck the Halls 커플 댄스',en:'Deck the Halls dance',views:'12.7만',viewsNote:'대표 영상 · 음원 12.6만 개 사용',
+ url:'https://www.tiktok.com/@amandagravestattoo/video/7705506751507877150',tags:['유행 음원','댄스','시즌'],hot:false,
+ why:'크리스마스 시즌 음원. 둘이 짧은 안무 맞추는 포맷이라 롤모델처럼 댄스로 가는 연습용으로 딱.',
+ charm:'통통 튀는 짧은 안무를 둘이 딱 맞출 때의 쾌감',
+ sound:'"Deck the Halls" 댄스 원본 음원',
+ refs:[['12.7만 · @amandagravestattoo','https://www.tiktok.com/@amandagravestattoo/video/7705506751507877150'],['유튜브에서 더 보기',YS('deck the halls dance trend couple')]],
+ props:['트리나 전구 배경','빨강/초록 커플 니트'],
+ vars:['풀 안무','틀리는 사람 벌칙','산타 모자 버전','거울 대칭 버전','스피드업 버전']},
+{id:'payfull',hue:[40,15],plat:'TikTok',title:'He wanna pay full price',en:'SNL Druski 립싱크',views:'390만',viewsNote:'조 조나스 영상',
+ url:'https://www.tiktok.com/@joejonas/video/7709706803206032653',tags:['유행 음원','립싱크'],hot:false,
+ why:'이번 주 525명이 새로 올림. 대사 한 줄 립싱크라 상황만 바꾸면 무한 변형 가능.',
+ charm:'뻔한 커플 상황에 대사 한 줄 얹는 공감',
+ sound:'SNL 원본 오디오',
+ refs:[['450만 · @theyy_all_luvv','https://www.tiktok.com/@theyy_all_luvv/video/7709756411093191950'],['390만 · @joejonas','https://www.tiktok.com/@joejonas/video/7709706803206032653']],
+ props:['카드/지갑 소품'],
+ vars:['데이트 계산 상황','쇼핑 상황','배달 상황','역할 바꾸기','자막만 바꾼 2탄']},
+{id:'jasmin',hue:[300,200],plat:'YouTube',title:'Jasmin & James 커플 댄스',en:'Viral TikTok dance trend',views:'48만',viewsNote:'3주 전 · 채널 평소의 90배',
+ url:YT('WDtACJEmkVU'),tags:['댄스','커플 2인'],hot:false,
+ why:'같은 채널의 같은 댄스 시리즈가 연달아 평소의 20~90배. 커플 댄스 수요가 확실함.',
+ charm:'둘의 합이 맞는 커플 케미 댄스',
+ sound:'영상 속 유행 음원',
+ refs:[['48만 · Jasmin and James','https://www.youtube.com/shorts/WDtACJEmkVU'],['21만 · 같은 시리즈','https://www.youtube.com/shorts/ThE34-OjX_U']],
+ props:['밝은 커플룩'],
+ vars:['풀 안무','반쪽씩 나눠 추기','틀리기 버전','의상 전환','거꾸로 재생']},
+{id:'tiktokdecide',hue:[180,230],plat:'YouTube',title:'틱톡이 정해주는 커플 챌린지',en:"Letting TikTok decide our challenge",views:'41만',viewsNote:'3일 전',
+ url:YT('v3p7RyHsPHM'),tags:['커플 게임','시리즈형'],hot:false,
+ why:'랜덤으로 뽑은 챌린지를 하는 시리즈 포맷. 한 번 찍으면 매주 이어서 낼 수 있음.',
+ charm:'뭐가 나올지 모르는 랜덤성 + 시리즈로 다음 편 궁금증',
+ sound:'원본 음성',
+ refs:[['41만 · Calen Chan','https://www.youtube.com/shorts/v3p7RyHsPHM']],
+ props:['폰 화면 녹화'],
+ vars:['1탄','2탄','3탄','실패 모음','구독자 추천 챌린지']},
+{id:'thennow',hue:[30,260],plat:'TikTok',title:'Time: 그때와 지금',en:'Pink Floyd "Time" then & now',views:'55.6만 개',viewsNote:'음원 사용 영상 수',
+ url:'https://www.tiktok.com/@aleahudickson/video/7704119965158214932',tags:['유행 음원','전환 편집'],hot:false,
+ why:'같은 장소 옛 사진→지금 전환이 이번 주 계속 확산. 커플 처음 사진만 있으면 됨.',
+ charm:'같은 자리 같은 포즈로 시간이 흐른 걸 보여주는 뭉클함',
+ sound:'Pink Floyd "Time"',
+ refs:[['대표 영상','https://www.tiktok.com/@aleahudickson/video/7704119965158214932']],
+ props:['연애 초기 사진','같은 장소'],
+ vars:['첫 데이트 장소','첫 커플 사진 재현','채널 첫 영상 vs 지금','역재생','사진 3장 연속']},
+{id:'knees',hue:[160,60],plat:'YouTube',title:'무릎 사이 공 끼고 점프',en:'Ball between knees hop',views:'8.8만',viewsNote:'2일 전',
+ url:YT('JHAhAzg00CY'),tags:['커플 게임','신규'],hot:false,
+ why:'이틀 만에 8.8만, 같은 채널의 풍선 버전도 5일 만에 8.1만. 아직 초기라 먼저 타면 유리.',
+ charm:'몸 개그 + 둘이 동시에 무너지는 순간',
+ sound:'원본 음성',
+ refs:[['8.8만 · 공 버전','https://www.youtube.com/shorts/JHAhAzg00CY'],['8.1만 · 등 사이 풍선 버전','https://www.youtube.com/shorts/6DExvSCslyI']],
+ props:['공 2개','풍선 5개'],
+ vars:['공 버전','풍선 등 버전','시간 재기','장애물 추가','실패 모음']}
+];
+const RESERVE = [
+{id:'pinkblack',hue:[330,0],plat:'TikTok',title:'핑크 vs 블랙 룸',en:'Pink vs Black Room Challenge',views:'—',viewsNote:'앞서 찾은 후보',url:TS('pink vs black room challenge'),tags:['색 트렌드'],
+ why:'색 대결 포맷. 우리 채널 강점(색 트렌드)과 바로 맞음.',charm:'두 색으로 갈린 방의 강한 대비',sound:'유행 음원',refs:[],
+ props:['핑크·블랙 소품 각 10개'],vars:['방 꾸미기','옷 대결','간식 대결','반반 섞기','투표형 엔딩']},
+{id:'gems',hue:[190,320],plat:'YouTube',title:'보석/색깔 챌린지',en:'Gems / Color challenge',views:'—',viewsNote:'앞서 찾은 후보',url:YS('gems color challenge couple shorts'),tags:['색 트렌드'],
+ why:'색 고르기 계열. 스키틀즈 버전이 모자라면 바로 대체 가능.',charm:'반짝이는 색 + 고르기 신경전',sound:'원본 음성',refs:[],
+ props:['보석 젤리/장난감 보석'],vars:['기본','스피드','안대','벌칙','색 옷 엔딩']},
+{id:'cake',hue:[20,340],plat:'YouTube',title:'케이크 조각 다 모으기',en:'Get all the cake slices',views:'—',viewsNote:'앞서 찾은 후보',url:YS('get all the cake slices challenge'),tags:['커플 게임'],
+ why:'게임형 포맷. 반응은 중간급이라 예비로.',charm:'조각을 뺏고 뺏기는 경쟁',sound:'원본 음성',refs:[],
+ props:['조각 케이크 6개'],vars:['기본','타이머','눈가리기','벌칙','먹방 엔딩']},
+{id:'colorgame',hue:[45,200],plat:'YouTube',title:'커플 컬러 보드게임',en:'Couple color challenge (DIY game)',views:'19만',viewsNote:'9일 전 · 평소의 5배',url:YT('tWpbTkxAFSU'),tags:['색 트렌드','커플 게임'],
+ why:'직접 만든 색 게임판으로 하는 버전. 색 계열 예비.',charm:'단순한 규칙 + 색 매칭의 시각적 쾌감',sound:'원본 음성',refs:[['19만 · HeyImDanIzzo','https://www.youtube.com/shorts/tWpbTkxAFSU']],
+ props:['색종이','종이컵'],vars:['기본','스피드','역할 바꾸기','실패','시리즈']},
+{id:'mmcheat',hue:[350,30],plat:'YouTube',title:'M&M 초콜릿 반칙 챌린지',en:'M&M chocolate challenge',views:'3.5만',viewsNote:'2일 전',url:YT('7371pGonWsI'),tags:['커플 게임'],
+ why:'반칙하다 걸리는 몰래카메라형. 소품이 스키틀즈 촬영과 겹쳐 같이 찍기 좋음.',charm:'몰래 반칙하다 들키는 순간',sound:'원본 음성',refs:[['4.9만 · Des and Naz','https://www.youtube.com/shorts/WUV-h6nw364']],
+ props:['M&M'],vars:['기본','역반칙','몰카','슬로모','벌칙']},
+{id:'bicep',hue:[0,30],plat:'YouTube',title:'이두박근 하트',en:'Bicep heart flex',views:'3.4만',viewsNote:'4일 전',url:YT('z29vowV7iK0'),tags:['유행 음원','짧음'],
+ why:'5초짜리 초간단. 촬영 막판 남는 시간에 하나 더 뽑기용.',charm:'근육 자랑 + 하트의 귀여운 반전',sound:'Trendformusic 원본',refs:[],
+ props:[],vars:['기본','역할 바꾸기','실패','커플 하트 합체','슬로모']},
+{id:'tree',hue:[140,0],plat:'TikTok',title:'트리 올라가는 날',en:'The tree goes up',views:'100만',viewsNote:'대표 영상',url:'https://www.tiktok.com/@fcbayern/video/7706109961721400608',tags:['유행 음원','시즌'],
+ why:'크리스마스 음원(120만 개 사용). 12월 첫 주말 전에 소진해야 하는 시즌 포맷.',charm:'빈 공간이 반짝이게 바뀌는 비포애프터',sound:'"Christmas" by neozilla',refs:[],
+ props:['트리','전구'],vars:['타임랩스','비포애프터','둘이 경쟁','실패','완성샷 댄스']},
+{id:'door',hue:[260,220],plat:'TikTok',title:'문 닫기 장난',en:'Closing the door prank',views:'610만',viewsNote:'대표 영상 · 이미 하락 중',url:'https://www.tiktok.com/@itsnastynaz/video/7708915718049336606',tags:['커플 2인','하락 중'],
+ why:'이미 꺾이는 중(-48%). 정말 찍을 게 없을 때만.',charm:'문 앞 급정거 몸개그',sound:'영상 속 음원',refs:[],
+ props:['문'],vars:['기본','역할 바꾸기','슬로모','연속 3번','실패']}
+];
+function embedUrl(u){let m=u.match(/youtube\.com\/shorts\/([\w-]{11})/);if(m)return `https://www.youtube.com/embed/${m[1]}?autoplay=1&playsinline=1&rel=0`;
+ m=u.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);if(m)return `https://www.tiktok.com/player/v1/${m[1]}?autoplay=1&music_info=1&description=1`;return null;}
+TRENDS.forEach(t=>t.kind='feed');RESERVE.forEach(t=>t.kind='reserve');
+const ALL=[...TRENDS,...RESERVE];const byId=Object.fromEntries(ALL.map(t=>[t.id,t]));
+
+// state (이 폰에만 저장)
+const KEY='eggpotato-picker-v1';
+let S={status:{},checks:{},tab:'feed'};
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const st=id=>S.status[id]||(byId[id].kind==='reserve'?'reserve':'new');
+
+const grad=t=>`linear-gradient(135deg,hsl(${t.hue[0]} 78% 56%),hsl(${t.hue[1]} 80% 50%))`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function counts(){
+  const n={feed:0,picks:0,reserve:0};
+  ALL.forEach(t=>{const s=st(t.id);if(s==='new')n.feed++;else if(s==='like')n.picks++;else if(s==='reserve')n.reserve++;});
+  return n;
+}
+function render(){
+  const n=counts();
+  document.getElementById('c-feed').textContent=n.feed;
+  document.getElementById('c-picks').textContent=n.picks;
+  document.getElementById('c-reserve').textContent=n.reserve;
+  document.getElementById('goalNum').textContent=`${n.picks} / 38`;
+  document.getElementById('goalBar').style.width=Math.min(100,n.picks/38*100)+'%';
+  document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===S.tab?'page':'false'));
+  const v=document.getElementById('view');
+  if(S.tab==='feed')renderFeed(v);else if(S.tab==='picks')renderPicks(v);else renderReserve(v);
+}
+
+function cardHTML(t){
+  return `<div class="poster" style="background:${grad(t)}">
+    <span class="plat">${t.plat}</span>
+    <div class="views">${esc(t.views)}<small>${esc(t.viewsNote)}</small></div>
+    <h2>${esc(t.title)}</h2><div class="en">${esc(t.en)}</div>
+  </div>
+  ${embedUrl(t.url)?`<button class="play" data-play="${t.id}">▶ 여기서 바로 보기</button>`:`<a class="play" href="${t.url}" target="_blank" rel="noopener">▶ ${t.plat}에서 찾아보기</a>`}
+  <div class="body">
+    <div class="row">${t.tags.map(g=>`<span class="tag${g==='급상승'?' hot':''}">${esc(g)}</span>`).join('')}</div>
+    <div><div class="lbl">이 영상의 매력</div><div class="charm">${esc(t.charm)}<span class="est">추정</span></div></div>
+    <div><div class="lbl">뜨는 이유</div><div class="why">${esc(t.why)}</div></div>
+    <div class="meta">음원: ${esc(t.sound)}</div>
+    ${t.refs.length?`<div class="refs"><div class="lbl">비슷하게 터진 영상</div>${t.refs.map(r=>`<a href="${r[1]}" target="_blank" rel="noopener">${esc(r[0])}</a>`).join('')}</div>`:''}
+  </div>
+  <span class="stamp like">찜</span><span class="stamp nope">패스</span>`;
+}
+
+function renderFeed(v){
+  const q=ALL.filter(t=>st(t.id)==='new');
+  if(!q.length){v.innerHTML=`<div class="empty"><b>이번 피드는 다 골랐어요</b>찜한 건 '찜 · 촬영 리스트'에, 모자라면 예비함에서 꺼내세요.</div>`;return;}
+  v.innerHTML=`<div class="deck"><div class="stack" id="stack"></div>
+    <div class="actions"><button class="b-pass" id="b-pass">패스</button><button class="b-res" id="b-res">예비함</button><button class="b-like" id="b-like">찜 ♥</button></div></div>`;
+  const stack=document.getElementById('stack');
+  if(q[1]){const b=document.createElement('div');b.className='card behind';b.innerHTML=cardHTML(q[1]);stack.appendChild(b);}
+  const c=document.createElement('div');c.className='card';c.innerHTML=cardHTML(q[0]);stack.appendChild(c);
+  const top=q[0];
+  document.getElementById('b-pass').onclick=()=>decide(top.id,'pass',c,-1);
+  document.getElementById('b-like').onclick=()=>decide(top.id,'like',c,1);
+  document.getElementById('b-res').onclick=()=>decide(top.id,'reserve',c,0);
+  drag(c,top.id);
+  const pb=c.querySelector('[data-play]');if(pb)pb.onclick=()=>playIn(c,top);
+}
+function playIn(card,t){const poster=card.querySelector('.poster');const p=document.createElement('div');p.className='player';
+ p.innerHTML=`<iframe src="${embedUrl(t.url)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="${esc(t.title)}"></iframe><a class="out" href="${t.url}" target="_blank" rel="noopener">${t.plat} 앱으로 열기</a>`;
+ poster.replaceWith(p);const b=card.querySelector('[data-play]');if(b)b.remove();}
+function decide(id,s,el,dir){
+  S.status[id]=s;save();
+  if(el&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    el.style.transition='transform .25s ease, opacity .25s';
+    el.style.transform=dir?`translateX(${dir*120}%) rotate(${dir*14}deg)`:'translateY(40%) scale(.9)';
+    el.style.opacity='0';setTimeout(render,230);
+  }else render();
+}
+function drag(el,id){
+  let x0=null,y0=0,dx=0,locked=false;
+  const like=el.querySelector('.stamp.like'),nope=el.querySelector('.stamp.nope');
+  el.addEventListener('pointerdown',e=>{if(e.target.closest('a'))return;x0=e.clientX;y0=e.clientY;dx=0;locked=false;});
+  el.addEventListener('pointermove',e=>{if(x0===null)return;dx=e.clientX-x0;const dy=e.clientY-y0;
+    if(!locked){if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)){locked=true;el.setPointerCapture(e.pointerId);}else if(Math.abs(dy)>10){x0=null;return;}else return;}
+    el.style.transform=`translateX(${dx}px) rotate(${dx/18}deg)`;like.style.opacity=Math.max(0,dx/90);nope.style.opacity=Math.max(0,-dx/90);});
+  const end=()=>{if(x0===null)return;x0=null;if(Math.abs(dx)>90){decide(id,dx>0?'like':'pass',el,dx>0?1:-1);}else{el.style.transition='transform .2s';el.style.transform='';like.style.opacity=nope.style.opacity=0;setTimeout(()=>el.style.transition='',200);}};
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+}
+
+function progress(t){const c=S.checks[t.id]||{};const tot=t.props.length+t.vars.length;const d=Object.values(c).filter(Boolean).length;return [d,tot];}
+function itemHTML(t,btns){
+  return `<div class="item"><div class="sw" style="background:${grad(t)}"></div>
+    <div><h4>${esc(t.title)}</h4><div class="sub">${t.plat} · ${esc(t.views)} · ${esc(t.tags.slice(0,2).join(' · '))}</div>${btns.prog||''}</div>
+    <div class="mini">${btns.html}</div></div>`;
+}
+function renderPicks(v){
+  const p=ALL.filter(t=>st(t.id)==='like');
+  const passed=ALL.filter(t=>st(t.id)==='pass');
+  const short=38-p.length;
+  v.innerHTML=`<div class="sec-h"><h3>주말 촬영 리스트</h3><p>11/28(토)–29(일)</p></div>
+   ${p.length?`<div class="list">${p.map(t=>{const [d,tot]=progress(t);return itemHTML(t,{prog:`<div class="prog">촬영 준비 ${d}/${tot}</div>`,html:`<button class="btn yolk" data-shoot="${t.id}">촬영 모드</button>`});}).join('')}</div>`
+     :`<div class="empty"><b>아직 찜한 게 없어요</b>피드에서 오른쪽으로 밀거나 '찜'을 누르면 여기 쌓여요.</div>`}
+   ${short>0?`<div class="note">원본 38개 목표까지 ${short}개 남았어요. 피드를 다 봤다면 예비함에서 꺼내 채우세요. 이 버전엔 실제 이번 주 트렌드 ${ALL.length}개만 들어 있어요.</div>`:''}
+   ${passed.length?`<details class="passed"><summary>패스한 것 ${passed.length}개 (되돌리기)</summary><div class="list" style="margin-top:8px">${passed.map(t=>itemHTML(t,{html:`<button class="btn" data-undo="${t.id}">되돌리기</button>`})).join('')}</div></details>`:''}`;
+  v.querySelectorAll('[data-shoot]').forEach(b=>b.onclick=()=>openShoot(b.dataset.shoot));
+  v.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>{S.status[b.dataset.undo]='new';save();render();});
+}
+function renderReserve(v){
+  const r=ALL.filter(t=>st(t.id)==='reserve');
+  v.innerHTML=`<div class="sec-h"><h3>예비함</h3><p>찜이 모자랄 때 꺼내 쓰는 후보</p></div>
+   ${r.length?`<div class="list">${r.map(t=>itemHTML(t,{prog:`<div class="sub">${esc(t.why)}</div>`,html:`<button class="btn yolk" data-pick="${t.id}">찜</button>`})).join('')}</div>`
+     :`<div class="empty"><b>예비함이 비었어요</b>피드에서 '예비함'을 누르면 여기로 와요.</div>`}`;
+  v.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{S.status[b.dataset.pick]='like';save();render();});
+}
+
+function openShoot(id){
+  const t=byId[id];const c=S.checks[id]=S.checks[id]||{};
+  const row=(k,label)=>`<label class="chk${c[k]?' done':''}"><input type="checkbox" id="ck-${id}-${k}" data-k="${k}" ${c[k]?'checked':''}><span>${esc(label)}</span></label>`;
+  document.getElementById('panel').innerHTML=`<h3>${esc(t.title)}</h3><div class="sub">음원: ${esc(t.sound)} · <a href="${t.url}" target="_blank" rel="noopener">원본 다시 보기</a></div>
+    <div class="lbl">준비물</div>${t.props.length?t.props.map((p,i)=>row('p'+i,p)).join(''):'<div class="sub">따로 필요 없음</div>'}
+    <div class="lbl">편집 변형 5개 (원본 1개로)</div>${t.vars.map((p,i)=>row('v'+i,`${i+1}. ${p}`)).join('')}
+    <div class="row" style="margin-top:14px"><button class="btn" id="to-res">예비함으로</button><button class="btn" id="to-pass">빼기</button></div>
+    <button class="btn yolk close" id="sheet-close">닫기</button>`;
+  const sh=document.getElementById('sheet');sh.hidden=false;
+  sh.querySelectorAll('input[data-k]').forEach(i=>i.onchange=()=>{c[i.dataset.k]=i.checked;i.closest('.chk').classList.toggle('done',i.checked);save();});
+  const close=()=>{sh.hidden=true;render();};
+  document.getElementById('sheet-close').onclick=close;
+  document.getElementById('to-res').onclick=()=>{S.status[id]='reserve';save();close();};
+  document.getElementById('to-pass').onclick=()=>{S.status[id]='pass';save();close();};
+  sh.onclick=e=>{if(e.target===sh)close();};
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();render();});
+render();
+</script>
+
+</body></html>
