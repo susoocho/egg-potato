@@ -112,6 +112,7 @@ nav button:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid 
 .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .player .out{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:4px 10px;border-radius:99px;text-decoration:none}
 .ttl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 16px 0}.ttl b{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.2;min-width:0}.ttl span{font-size:12px;color:var(--muted);white-space:nowrap}
+.nav-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:8px}.nav-row .pos{font-size:12px;color:var(--muted);text-align:center}.arrow{all:unset;cursor:pointer;width:38px;height:32px;border-radius:12px;background:var(--surface);border:1px solid var(--line);text-align:center;font-size:22px;line-height:30px}
 .play{border:0;cursor:pointer;font-family:inherit}
 </style>
 </head><body>
@@ -307,47 +308,47 @@ function cardHTML(t){
     <div class="meta">음원: ${esc(t.sound)}</div>
     ${t.refs.length?`<div class="refs"><div class="lbl">비슷하게 터진 영상</div>${t.refs.map(r=>`<a href="${r[1]}" target="_blank" rel="noopener">${esc(r[0])}</a>`).join('')}</div>`:''}
   </div>
-  <span class="stamp like">찜</span><span class="stamp nope">패스</span>`;
+  `;
 }
 
 function renderFeed(v){
   const q=ALL.filter(t=>st(t.id)==='new');
   if(!q.length){v.innerHTML=`<div class="empty"><b>이번 피드는 다 골랐어요</b>찜한 건 '찜 · 촬영 리스트'에, 모자라면 예비함에서 꺼내세요.</div>`;return;}
-  v.innerHTML=`<div class="deck"><div class="stack" id="stack"></div>
+  S.idx=((S.idx||0)%q.length+q.length)%q.length;
+  const top=q[S.idx];
+  v.innerHTML=`<div class="deck"><div class="nav-row"><button class="arrow" id="b-prev" aria-label="이전">‹</button><span class="pos">${S.idx+1} / ${q.length} · 옆으로 밀어서 넘겨보기</span><button class="arrow" id="b-next" aria-label="다음">›</button></div>
+    <div class="stack" id="stack"></div>
     <div class="actions"><button class="b-pass" id="b-pass">패스</button><button class="b-res" id="b-res">예비함</button><button class="b-like" id="b-like">찜 ♥</button></div></div>`;
   const stack=document.getElementById('stack');
-  if(q[1]){const b=document.createElement('div');b.className='card behind';b.innerHTML=cardHTML(q[1]);stack.appendChild(b);}
-  const c=document.createElement('div');c.className='card';c.innerHTML=cardHTML(q[0]);stack.appendChild(c);
-  const top=q[0];
-  document.getElementById('b-pass').onclick=()=>decide(top.id,'pass',c,-1);
-  document.getElementById('b-like').onclick=()=>decide(top.id,'like',c,1);
-  document.getElementById('b-res').onclick=()=>decide(top.id,'reserve',c,0);
-  drag(c,top.id);
+  const c=document.createElement('div');c.className='card';c.innerHTML=cardHTML(top);stack.appendChild(c);
+  document.getElementById('b-pass').onclick=()=>decide(top.id,'pass',c);
+  document.getElementById('b-like').onclick=()=>decide(top.id,'like',c);
+  document.getElementById('b-res').onclick=()=>decide(top.id,'reserve',c);
+  document.getElementById('b-prev').onclick=()=>go(-1,c);
+  document.getElementById('b-next').onclick=()=>go(1,c);
+  drag(c);
   const pb=c.querySelector('[data-play]');if(pb){pb.onclick=()=>playIn(c,top);playIn(c,top);}
+}
+const calm=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+function go(d,el){S.idx=(S.idx||0)+d;save();
+  if(el&&!calm()){el.style.transition='transform .2s ease, opacity .2s';el.style.transform=`translateX(${-d*110}%)`;el.style.opacity='0';setTimeout(render,180);}else render();}
+function decide(id,s,el){
+  S.status[id]=s;save(); // 같은 자리 유지 → 다음 카드가 자동으로 올라옴
+  if(el&&!calm()){el.style.transition='transform .22s ease, opacity .22s';el.style.transform=s==='like'?'translateY(-30%) scale(.9)':'translateY(30%) scale(.9)';el.style.opacity='0';setTimeout(render,200);}else render();
+}
+function drag(el){
+  let x0=null,y0=0,dx=0,locked=false;
+  el.addEventListener('pointerdown',e=>{if(e.target.closest('a,button'))return;x0=e.clientX;y0=e.clientY;dx=0;locked=false;});
+  el.addEventListener('pointermove',e=>{if(x0===null)return;dx=e.clientX-x0;const dy=e.clientY-y0;
+    if(!locked){if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)){locked=true;el.setPointerCapture(e.pointerId);}else if(Math.abs(dy)>10){x0=null;return;}else return;}
+    el.style.transform=`translateX(${dx}px)`;});
+  const end=()=>{if(x0===null)return;x0=null;if(locked&&Math.abs(dx)>70){go(dx<0?1:-1,el);}else{el.style.transition='transform .2s';el.style.transform='';setTimeout(()=>el.style.transition='',200);}};
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
 }
 function playIn(card,t){const poster=card.querySelector('.poster');const p=document.createElement('div');p.className='player';
  p.innerHTML=`<iframe src="${embedUrl(t.url)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="${esc(t.title)}"></iframe><a class="out" href="${t.url}" target="_blank" rel="noopener">${t.plat} 앱으로 열기</a>`;
  poster.replaceWith(p);const b=card.querySelector('[data-play]');if(b)b.remove();
  const h=document.createElement('div');h.className='ttl';h.innerHTML=`<b>${esc(t.title)}</b><span>${t.plat} · ${esc(t.views)}</span>`;p.after(h);}
-function decide(id,s,el,dir){
-  S.status[id]=s;save();
-  if(el&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-    el.style.transition='transform .25s ease, opacity .25s';
-    el.style.transform=dir?`translateX(${dir*120}%) rotate(${dir*14}deg)`:'translateY(40%) scale(.9)';
-    el.style.opacity='0';setTimeout(render,230);
-  }else render();
-}
-function drag(el,id){
-  let x0=null,y0=0,dx=0,locked=false;
-  const like=el.querySelector('.stamp.like'),nope=el.querySelector('.stamp.nope');
-  el.addEventListener('pointerdown',e=>{if(e.target.closest('a'))return;x0=e.clientX;y0=e.clientY;dx=0;locked=false;});
-  el.addEventListener('pointermove',e=>{if(x0===null)return;dx=e.clientX-x0;const dy=e.clientY-y0;
-    if(!locked){if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)){locked=true;el.setPointerCapture(e.pointerId);}else if(Math.abs(dy)>10){x0=null;return;}else return;}
-    el.style.transform=`translateX(${dx}px) rotate(${dx/18}deg)`;like.style.opacity=Math.max(0,dx/90);nope.style.opacity=Math.max(0,-dx/90);});
-  const end=()=>{if(x0===null)return;x0=null;if(Math.abs(dx)>90){decide(id,dx>0?'like':'pass',el,dx>0?1:-1);}else{el.style.transition='transform .2s';el.style.transform='';like.style.opacity=nope.style.opacity=0;setTimeout(()=>el.style.transition='',200);}};
-  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
-}
-
 function progress(t){const c=S.checks[t.id]||{};const tot=t.props.length+t.vars.length;const d=Object.values(c).filter(Boolean).length;return [d,tot];}
 function itemHTML(t,btns){
   return `<div class="item"><div class="sw" style="background:${grad(t)}"></div>
