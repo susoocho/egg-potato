@@ -112,15 +112,20 @@ def make_title(v: Video, templates: list[str]) -> str:
 
 # ---------------------------------------------------------------- Google APIs
 
+def env(name: str) -> str:
+    """Secret values pasted into GitHub often carry a stray space or newline."""
+    return os.environ.get(name, "").strip()
+
+
 def google_services():
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
 
     creds = Credentials(
         token=None,
-        refresh_token=os.environ["YT_REFRESH_TOKEN"],
-        client_id=os.environ["YT_CLIENT_ID"],
-        client_secret=os.environ["YT_CLIENT_SECRET"],
+        refresh_token=env("YT_REFRESH_TOKEN"),
+        client_id=env("YT_CLIENT_ID"),
+        client_secret=env("YT_CLIENT_SECRET"),
         token_uri="https://oauth2.googleapis.com/token",
         scopes=SCOPES,
     )
@@ -206,8 +211,8 @@ def move(drive, file_id: str, from_id: str, to_id: str, video_id: str) -> None:
 def main() -> int:
     cfg = load_config()
     dry = os.environ.get("DRY_RUN", "").lower() in {"1", "true", "yes"}
-    folder_id = os.environ.get("DRIVE_FOLDER_ID", "")
-    if not (folder_id and os.environ.get("YT_REFRESH_TOKEN")):
+    folder_id = env("DRIVE_FOLDER_ID")
+    if not (folder_id and env("YT_REFRESH_TOKEN")):
         print("아직 연결 설정이 안 됐어요. uploader/README.md 의 처음 연결 순서를 따라주세요.")
         return 0
     tz = ZoneInfo(cfg.get("timezone", "Asia/Seoul"))
