@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from zoneinfo import ZoneInfo
 
-from upload import Video, make_title, pick_today, publish_times
+from upload import Video, make_title, pick_today, publish_times, resting_originals
 
 KST = ZoneInfo("Asia/Seoul")
 
@@ -53,3 +53,16 @@ def test_titles_rotate_by_variant():
     assert make_title(v("아카시로_1.mp4"), t) == "아카시로 A"
     assert make_title(v("아카시로_2.mp4"), t) == "아카시로 B"
     assert make_title(v("아카시로_3.mp4"), t) == "아카시로 A"
+
+
+def test_resting_originals_wait_min_days():
+    uploaded = [("A_1.mp4", "2026-11-25"), ("B_1.mp4", "2026-11-19"), ("C_2.mp4", "2026-11-28")]
+    resting = resting_originals(uploaded, date(2026, 11, 30), 6)
+    assert resting == {"A", "C"}  # B went up 11 days ago, free again
+    assert resting_originals(uploaded, date(2026, 11, 30), 0) == set()
+
+
+def test_pick_today_skips_resting():
+    queue = [v("A_2.mp4", "2026-11-29T01:00:00Z"), v("B_2.mp4", "2026-11-29T02:00:00Z")]
+    picked = pick_today(queue, per_day=27, max_per_original=1, resting={"A"})
+    assert [p.name for p in picked] == ["B_2.mp4"]

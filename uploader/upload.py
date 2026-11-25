@@ -22,7 +22,7 @@ import re
 import sys
 import tempfile
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -64,10 +64,16 @@ def load_config() -> dict:
         return json.load(f)
 
 
-def pick_today(videos: list[Video], per_day: int, max_per_original: int) -> list[Video]:
-    """Oldest originals first; round-robin so variants of one original spread out."""
+def pick_today(videos: list[Video], per_day: int, max_per_original: int,
+               resting: set[str] | None = None) -> list[Video]:
+    """Oldest originals first; round-robin so variants of one original spread out.
+
+    `resting` holds originals that went up too recently; their variants wait."""
+    resting = resting or set()
     groups: dict[str, list[Video]] = {}
     for v in sorted(videos, key=lambda v: (v.created, v.variant, v.name)):
+        if v.base in resting:
+            continue
         groups.setdefault(v.base, []).append(v)
     for g in groups.values():
         g.sort(key=lambda v: (v.variant, v.name))
@@ -81,6 +87,23 @@ def pick_today(videos: list[Video], per_day: int, max_per_original: int) -> list
             if round_ < len(groups[base]):
                 picked.append(groups[base][round_])
     return picked
+
+
+def resting_originals(uploaded: list[tuple[str, str]], today: date, min_days: int) -> set[str]:
+    """Originals (by base name) uploaded fewer than `min_days` days before `today`.
+
+    `uploaded` is (file name, upload date as YYYY-MM-DD)."""
+    if min_days <= 0:
+        return set()
+    out = set()
+    for name, day in uploaded:
+        try:
+            d = date.fromisoformat(day[:10])
+        except ValueError:
+            continue
+        if (today - d).days < min_days:
+            out.add(Video("", name, "").base)
+    return out
 
 
 def publish_times(count: int, now: datetime, tz: ZoneInfo, start: str, end: str) -> list[datetime]:
@@ -150,6 +173,25 @@ def list_queue(drive, folder_id: str) -> list[Video]:
             return out
 
 
+def list_uploaded(drive, done_id: str, tz: ZoneInfo) -> list[tuple[str, str]]:
+    """(name, local upload date) for files already moved to the done folder."""
+    out, token = [], None
+    q = f"'{done_id}' in parents and trashed = false"
+    while True:
+        res = drive.files().list(
+            q=q, fields="nextPageToken, files(name, modifiedTime, appProperties)", pageSize=1000,
+            pageToken=token, supportsAllDrives=True, includeItemsFromAllDrives=True,
+        ).execute()
+        for f in res.get("files", []):
+            day = (f.get("appProperties") or {}).get("uploaded")
+            if not day:
+                day = datetime.fromisoformat(f["modifiedTime"].replace("Z", "+00:00")).astimezone(tz).date().isoformat()
+            out.append((f["name"], day))
+        token = res.get("nextPageToken")
+        if not token:
+            return out
+
+
 def done_folder(drive, parent_id: str, name: str) -> str:
     safe = name.replace("'", "\\'")
     q = (f"'{parent_id}' in parents and trashed = false and name = '{safe}' "
@@ -200,10 +242,11 @@ def upload(youtube, path: Path, title: str, cfg: dict, publish_at: datetime) -> 
     return resp["id"]
 
 
-def move(drive, file_id: str, from_id: str, to_id: str, video_id: str) -> None:
+def move(drive, file_id: str, from_id: str, to_id: str, video_id: str, day: str) -> None:
     drive.files().update(
         fileId=file_id, addParents=to_id, removeParents=from_id,
-        body={"description": f"https://youtube.com/shorts/{video_id}"},
+        body={"description": f"https://youtube.com/shorts/{video_id}",
+              "appProperties": {"uploaded": day}},
         supportsAllDrives=True,
     ).execute()
 
@@ -219,12 +262,18 @@ def main() -> int:
 
     drive, youtube = google_services()
     queue = list_queue(drive, folder_id)
-    today = pick_today(queue, int(cfg["per_day"]), int(cfg["max_per_original_per_day"]))
+    done_id = done_folder(drive, folder_id, cfg.get("done_folder_name", "올린 영상"))
+    local_today = datetime.now(tz).date()
+    min_days = int(cfg.get("min_days_between_variants", 0))
+    resting = resting_originals(list_uploaded(drive, done_id, tz), local_today, min_days)
+    today = pick_today(queue, int(cfg["per_day"]), int(cfg["max_per_original_per_day"]), resting)
     times = publish_times(len(today), datetime.now(timezone.utc), tz,
                           cfg["publish_start"], cfg["publish_end"])
 
     print(f"대기 중인 영상 {len(queue)}개, 오늘 올릴 영상 {len(today)}개"
           f"{' (연습 모드, 실제로 올리지 않음)' if dry else ''}")
+    if resting:
+        print(f"최근 {min_days}일 안에 올라간 원본 {len(resting)}개는 쉬는 중이라 이번엔 건너뛰어요.")
     if len(today) < int(cfg["per_day"]):
         print(f"주의: 오늘 목표 {cfg['per_day']}개보다 {int(cfg['per_day']) - len(today)}개 부족해요. "
               "드라이브 폴더에 영상을 더 넣어주세요.")
@@ -233,7 +282,6 @@ def main() -> int:
     if dry or not today:
         return 0
 
-    done_id = done_folder(drive, folder_id, cfg.get("done_folder_name", "올린 영상"))
     failures = 0
     with tempfile.TemporaryDirectory() as tmp:
         for v, t in zip(today, times):
@@ -241,7 +289,7 @@ def main() -> int:
             try:
                 download(drive, v.id, path)
                 vid = upload(youtube, path, make_title(v, cfg["title_templates"]), cfg, t)
-                move(drive, v.id, folder_id, done_id, vid)
+                move(drive, v.id, folder_id, done_id, vid, t.astimezone(tz).date().isoformat())
                 print(f"올림: {v.name} → https://youtube.com/shorts/{vid} ({t.strftime('%H:%M')} 공개)")
             except Exception as e:  # keep going with the rest of the batch
                 failures += 1
