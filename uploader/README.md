@@ -27,7 +27,7 @@
 
 계속 비공개로 두고 싶은 영상은 제목에 `#보관`을 넣으면 건드리지 않아요.
 `scheduler.since` 이전에 올린 비공개 영상도 건드리지 않아요.
-`scheduler.first_publish_date`에 날짜(예: `2026-12-26`)를 넣으면 그날부터 공개되도록 잡아요.
+`scheduler.first_publish_date`에 날짜(예: `2027-01-01`)를 넣으면 그날부터 공개되도록 잡아요.
 잠시 멈추려면 저장소 변수 `SCHEDULER_ENABLED`를 `false`로 바꾸면 돼요.
 
 ## 설정 바꾸기 (`config.json`)
