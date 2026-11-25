@@ -13,7 +13,20 @@
     "{name} 😂 #shorts"
   ],
   "description": "Egg and Potato Couple 🥚🥔\n\n#shorts #couple #couplegoals #trend #challenge",
-  "tags": ["couple", "couple challenge", "shorts", "trend", "egg and potato"],
+  "tags": [
+    "couple",
+    "couple challenge",
+    "shorts",
+    "trend",
+    "egg and potato"
+  ],
   "category_id": "22",
-  "done_folder_name": "올린 영상"
+  "done_folder_name": "올린 영상",
+  "scheduler": {
+    "since": "2026-11-26",
+    "first_publish_date": "",
+    "max_days_ahead": 60,
+    "max_per_run": 150,
+    "look_back": 500
+  }
 }

@@ -28,7 +28,10 @@ from zoneinfo import ZoneInfo
 
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm"}
 VARIANT_RE = re.compile(r"^(?P<base>.+?)[ _\-]+(?:v)?(?P<num>\d{1,3})$", re.IGNORECASE)
+# Scopes the refresh token must have been granted (see README). The token
+# carries its own scopes, so they are not re-requested on refresh.
 SCOPES = [
+    "https://www.googleapis.com/auth/youtube",
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/drive",
 ]
@@ -150,7 +153,6 @@ def google_services():
         client_id=env("YT_CLIENT_ID"),
         client_secret=env("YT_CLIENT_SECRET"),
         token_uri="https://oauth2.googleapis.com/token",
-        scopes=SCOPES,
     )
     drive = build("drive", "v3", credentials=creds, cache_discovery=False)
     youtube = build("youtube", "v3", credentials=creds, cache_discovery=False)
