@@ -152,12 +152,35 @@ def plan_segments(duration: float, start: int, end: int, still: list[tuple[int, 
 
 # ---------------------------------------------------------------- ffmpeg
 
-def probe(path: Path) -> tuple[float, bool]:
-    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type",
-                          "-of", "json", str(path)], capture_output=True, text=True, check=True).stdout
+@dataclass
+class Info:
+    duration: float
+    has_audio: bool
+    width: int
+    height: int
+    fps: float
+    kbps: int
+
+
+def probe(path: Path) -> Info:
+    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                          "format=duration,bit_rate:stream=codec_type,width,height,avg_frame_rate:"
+                          "stream_side_data=rotation", "-of", "json", str(path)],
+                         capture_output=True, text=True, check=True).stdout
     d = json.loads(out)
-    has_audio = any(st.get("codec_type") == "audio" for st in d.get("streams", []))
-    return float(d["format"]["duration"]), has_audio
+    streams = d.get("streams", [])
+    v = next((st for st in streams if st.get("codec_type") == "video"), {})
+    w, h = int(v.get("width", 0)), int(v.get("height", 0))
+    rot = next((abs(int(sd.get("rotation", 0))) for sd in v.get("side_data_list", []) or []
+                if "rotation" in sd), 0)
+    if rot in (90, 270):
+        w, h = h, w
+    num, _, den = (v.get("avg_frame_rate") or "30/1").partition("/")
+    fps = float(num) / float(den or 1) if float(den or 1) else 30.0
+    return Info(float(d["format"]["duration"]),
+                any(st.get("codec_type") == "audio" for st in streams),
+                w, h, round(min(max(fps, 24.0), 60.0), 3),
+                int(d["format"].get("bit_rate") or 0) // 1000)
 
 
 def read_frames(path: Path) -> np.ndarray:
@@ -177,8 +200,9 @@ def atempo(speed: float) -> str:
     return ",".join(parts)
 
 
-def render(src: Path, dst: Path, segs: list[tuple[float, float, float]], has_audio: bool) -> None:
-    fit = (f"scale={OUT_W}:{OUT_H}:force_original_aspect_ratio=increase,"
+def render(src: Path, dst: Path, segs: list[tuple[float, float, float]], has_audio: bool,
+           fps: float = 30.0) -> None:
+    fit = (f"scale={OUT_W}:{OUT_H}:force_original_aspect_ratio=increase:flags=lanczos,"
            f"crop={OUT_W}:{OUT_H},setsar=1")
     parts, labels = [], []
     for k, (a, b, sp) in enumerate(segs):
@@ -194,24 +218,32 @@ def render(src: Path, dst: Path, segs: list[tuple[float, float, float]], has_aud
            "-map", "[v]"]
     if has_audio:
         cmd += ["-map", "[a]", "-c:a", "aac", "-b:a", "160k"]
-    cmd += ["-r", "30", "-c:v", "libx264", "-preset", "medium", "-crf", "19",
-            "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(dst)]
+    # High quality on purpose: YouTube re-encodes everything, so give it a clean copy.
+    cmd += ["-fps_mode", "cfr", "-r", f"{fps:g}", "-c:v", "libx264", "-preset", "slow",
+            "-crf", "16", "-profile:v", "high", "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart", str(dst)]
     subprocess.run(cmd, check=True)
 
 
 def edit(src: Path, dst: Path, s: Settings | None = None) -> str:
     """Edit one file. Returns a one-line Korean summary of what was done."""
     s = s or Settings()
-    duration, has_audio = probe(src)
+    info = probe(src)
+    duration = info.duration
     m = frame_metrics(read_frames(src))
     start, end = find_trim(m, s)
     still = find_still(m, start, end, s)
     segs = plan_segments(duration, start, end, still, s)
-    render(src, dst, segs, has_audio)
+    render(src, dst, segs, info.has_audio, info.fps)
     new_len = sum((b - a) / sp for a, b, sp in segs)
     cut_head, cut_tail = start / FPS, max(0.0, duration - (end + 1) / FPS)
     fast = sum(b - a for a, b, sp in segs if sp != 1.0)
-    return (f"{duration:.1f}초 → {new_len:.1f}초 (앞 {cut_head:.1f}초, 뒤 {cut_tail:.1f}초 자름, "
+    out = probe(dst)
+    src_q = f"원본 {info.width}x{info.height} {info.fps:g}fps {info.kbps}kbps"
+    if min(info.width, info.height * 9 // 16) < OUT_W:
+        src_q += " (원본 해상도가 낮아서 늘렸어요)"
+    return (f"{src_q} → {out.width}x{out.height} {out.kbps}kbps, "
+            f"{duration:.1f}초 → {new_len:.1f}초 (앞 {cut_head:.1f}초, 뒤 {cut_tail:.1f}초 자름, "
             f"{fast:.1f}초 구간 {s.speed:g}배속)")
 
 
