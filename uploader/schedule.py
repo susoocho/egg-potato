@@ -205,7 +205,7 @@ def main() -> int:
     if len(todo) < len(pending):
         print(f"주의: {len(pending) - len(todo)}개는 이번에 자리를 못 잡았어요. 다음 실행 때 다시 시도해요.")
     for s, t in todo:
-        print(f"  {t.astimezone(tz).strftime('%m-%d %H:%M')}  {s.title}  →  "
+        print(f"  {t.astimezone(tz).strftime('%m-%d %H:%M')}  {s.title} (올린 시각 {s.uploaded.astimezone(tz).strftime('%m-%d %H:%M')})  →  "
               f"{make_title(Video('', s.title + '.mp4', ''), cfg['title_templates'])}")
     if dry:
         return 0
