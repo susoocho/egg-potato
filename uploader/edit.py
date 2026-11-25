@@ -6,7 +6,9 @@ For each video in the Drive folder `편집 전` (inside the upload folder):
     (picking up / putting down the phone),
   * speed up long still stretches (2x by default),
   * make it a 1080x1920 vertical video,
-  * save it to `편집 완료` and move the original to `편집 전/처리함`.
+  * burn in a hook caption at the top (see captions.py), one different line per
+    variant, `edit.variants` versions in all (`그네_1.mp4` ... `그네_5.mp4`),
+  * save them to `편집 완료` and move the original to `편집 전/처리함`.
 
 The analysis is plain numpy on small grayscale frames, so it is cheap and the
 decisions are printed in the log.
@@ -201,7 +203,7 @@ def atempo(speed: float) -> str:
 
 
 def render(src: Path, dst: Path, segs: list[tuple[float, float, float]], has_audio: bool,
-           fps: float = 30.0) -> None:
+           fps: float = 30.0, caption_png: Path | None = None) -> None:
     fit = (f"scale={OUT_W}:{OUT_H}:force_original_aspect_ratio=increase:flags=lanczos,"
            f"crop={OUT_W}:{OUT_H},setsar=1")
     parts, labels = [], []
@@ -213,8 +215,14 @@ def render(src: Path, dst: Path, segs: list[tuple[float, float, float]], has_aud
         else:
             labels.append(f"[v{k}]")
     parts.append(f"{''.join(labels)}concat=n={len(segs)}:v=1:a={1 if has_audio else 0}"
-                 + ("[v][a]" if has_audio else "[v]"))
-    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(src), "-filter_complex", ";".join(parts),
+                 + ("[vc][a]" if has_audio else "[vc]"))
+    inputs = ["-i", str(src)]
+    if caption_png:
+        inputs += ["-i", str(caption_png)]
+        parts.append("[vc][1:v]overlay=0:0:eof_action=repeat:format=auto[v]")
+    else:
+        parts.append("[vc]null[v]")
+    cmd = ["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", ";".join(parts),
            "-map", "[v]"]
     if has_audio:
         cmd += ["-map", "[a]", "-c:a", "aac", "-b:a", "160k"]
@@ -225,8 +233,13 @@ def render(src: Path, dst: Path, segs: list[tuple[float, float, float]], has_aud
     subprocess.run(cmd, check=True)
 
 
-def edit(src: Path, dst: Path, s: Settings | None = None) -> str:
-    """Edit one file. Returns a one-line Korean summary of what was done."""
+def edit(src: Path, out_dir: Path, name: str, variants: int = 1,
+         s: Settings | None = None) -> tuple[list[tuple[Path, str]], str]:
+    """Edit one file into `variants` captioned versions.
+
+    Returns [(output path, caption)] and a one-line Korean summary."""
+    import captions
+
     s = s or Settings()
     info = probe(src)
     duration = info.duration
@@ -234,17 +247,24 @@ def edit(src: Path, dst: Path, s: Settings | None = None) -> str:
     start, end = find_trim(m, s)
     still = find_still(m, start, end, s)
     segs = plan_segments(duration, start, end, still, s)
-    render(src, dst, segs, info.has_audio, info.fps)
+    base = Path(name).stem.split("__", 1)[0].strip()
+    outs = []
+    for i, text in enumerate(captions.pick(name, max(1, variants)), start=1):
+        png = captions.make_png(text, out_dir / f"cap{i}.png")
+        dst = out_dir / f"{base}_{i}.mp4"
+        render(src, dst, segs, info.has_audio, info.fps, png)
+        png.unlink(missing_ok=True)
+        outs.append((dst, text))
     new_len = sum((b - a) / sp for a, b, sp in segs)
     cut_head, cut_tail = start / FPS, max(0.0, duration - (end + 1) / FPS)
     fast = sum(b - a for a, b, sp in segs if sp != 1.0)
-    out = probe(dst)
+    out = probe(outs[0][0])
     src_q = f"원본 {info.width}x{info.height} {info.fps:g}fps {info.kbps}kbps"
     if min(info.width, info.height * 9 // 16) < OUT_W:
         src_q += " (원본 해상도가 낮아서 늘렸어요)"
-    return (f"{src_q} → {out.width}x{out.height} {out.kbps}kbps, "
-            f"{duration:.1f}초 → {new_len:.1f}초 (앞 {cut_head:.1f}초, 뒤 {cut_tail:.1f}초 자름, "
-            f"{fast:.1f}초 구간 {s.speed:g}배속)")
+    return outs, (f"{src_q} → {out.width}x{out.height} {out.kbps}kbps, "
+                  f"{duration:.1f}초 → {new_len:.1f}초 (앞 {cut_head:.1f}초, 뒤 {cut_tail:.1f}초 자름, "
+                  f"{fast:.1f}초 구간 {s.speed:g}배속)")
 
 
 # ---------------------------------------------------------------- Drive
@@ -261,7 +281,8 @@ def find_child(drive, parent: str, name: str, folder: bool) -> str | None:
 def main() -> int:
     from googleapiclient.http import MediaFileUpload
 
-    from upload import VIDEO_EXT, done_folder, download, env, google_services, list_queue
+    from upload import (VIDEO_EXT, done_folder, download, env, google_services, list_queue,
+                        load_config)
 
     dry = env("DRY_RUN").lower() in {"1", "true", "yes"}
     root = env("DRIVE_FOLDER_ID")
@@ -288,31 +309,30 @@ def main() -> int:
     todo = [v for v in todo if Path(v.name).suffix.lower() in VIDEO_EXT]
     print(f"편집할 영상 {len(todo)}개{' (연습 모드: 결과를 드라이브에 올리지 않음)' if dry else ''}")
 
+    variants = int(load_config().get("edit", {}).get("variants", 5))
     failures = 0
-    with tempfile.TemporaryDirectory() as tmp:
-        for v in todo:
+    for v in todo:
+        with tempfile.TemporaryDirectory() as tmp:
             src = Path(tmp) / f"in{Path(v.name).suffix.lower()}"
-            out_name = f"{Path(v.name).stem}_편집.mp4"
-            dst = Path(tmp) / "out.mp4"
             try:
                 download(drive, v.id, src)
-                print(f"{v.name}: {edit(src, dst)}")
-                if not dry:
-                    drive.files().create(
-                        body={"name": out_name, "parents": [outbox]},
-                        media_body=MediaFileUpload(str(dst), mimetype="video/mp4", resumable=True),
-                        fields="id", supportsAllDrives=True,
-                    ).execute()
-                    if move_after:
-                        drive.files().update(fileId=v.id, addParents=used, removeParents=inbox,
-                                             supportsAllDrives=True).execute()
-                    print(f"  → 편집 완료/{out_name}")
+                outs, summary = edit(src, Path(tmp), v.name, variants)
+                print(f"{v.name}: {summary}")
+                for dst, text in outs:
+                    if not dry:
+                        drive.files().create(
+                            body={"name": dst.name, "parents": [outbox],
+                                  "description": f"자막: {text}"},
+                            media_body=MediaFileUpload(str(dst), mimetype="video/mp4", resumable=True),
+                            fields="id", supportsAllDrives=True,
+                        ).execute()
+                    print(f"  → 편집 완료/{dst.name}  자막: {text}")
+                if not dry and move_after:
+                    drive.files().update(fileId=v.id, addParents=used, removeParents=inbox,
+                                         supportsAllDrives=True).execute()
             except Exception as e:
                 failures += 1
                 print(f"실패: {v.name}: {e}", file=sys.stderr)
-            finally:
-                src.unlink(missing_ok=True)
-                dst.unlink(missing_ok=True)
     return 1 if failures else 0
 
 
