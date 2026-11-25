@@ -23,8 +23,8 @@
   "category_id": "22",
   "done_folder_name": "올린 영상",
   "scheduler": {
-    "since": "2026-11-26",
-    "first_publish_date": "",
+    "since": "2026-11-25T11:30",
+    "first_publish_date": "2027-01-01",
     "max_days_ahead": 60,
     "max_per_run": 150,
     "look_back": 500

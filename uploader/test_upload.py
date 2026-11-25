@@ -66,3 +66,10 @@ def test_pick_today_skips_resting():
     queue = [v("A_2.mp4", "2026-11-29T01:00:00Z"), v("B_2.mp4", "2026-11-29T02:00:00Z")]
     picked = pick_today(queue, per_day=27, max_per_original=1, resting={"A"})
     assert [p.name for p in picked] == ["B_2.mp4"]
+
+
+def test_variant_without_space():
+    assert v("그네2.mp4").base == "그네"
+    assert v("그네2.mp4").variant == 2
+    assert v("그네 2.mp4").base == "그네"
+    assert v("babe 2026.mp4").base == "babe 2026"

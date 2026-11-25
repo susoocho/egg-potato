@@ -27,7 +27,9 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 VIDEO_EXT = {".mp4", ".mov", ".m4v", ".webm"}
-VARIANT_RE = re.compile(r"^(?P<base>.+?)[ _\-]+(?:v)?(?P<num>\d{1,3})$", re.IGNORECASE)
+# "아카시로_2", "그네 2", "그네2", "Color trend v2". The base must end in a non-digit
+# so "babe 2026" stays one name.
+VARIANT_RE = re.compile(r"^(?P<base>.*?\D)[ _\-]*(?:v)?(?P<num>\d{1,3})$", re.IGNORECASE)
 # Scopes the refresh token must have been granted (see README). The token
 # carries its own scopes, so they are not re-requested on refresh.
 SCOPES = [
