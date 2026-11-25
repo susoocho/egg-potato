@@ -1,0 +1,41 @@
+name: 영상 편집
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "특정 파일만 편집 (예: 올린 영상/그네.mp4). 비우면 '편집 전' 폴더 전체"
+        type: string
+        default: ""
+      dry_run:
+        description: "연습 모드 (편집 결과를 드라이브에 올리지 않음)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: edit-videos
+  cancel-in-progress: false
+
+jobs:
+  edit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: uploader
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install -r requirements.txt
+      - name: 편집
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          EDIT_SOURCE: ${{ inputs.source }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: python edit.py
