@@ -28,5 +28,8 @@
     "max_days_ahead": 60,
     "max_per_run": 150,
     "look_back": 500
+  },
+  "edit": {
+    "variants": 5
   }
 }
