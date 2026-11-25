@@ -1,0 +1,38 @@
+name: 매일 쇼츠 업로드
+
+on:
+  schedule:
+    - cron: "0 20 * * *"   # 매일 새벽 5시 (한국 시간)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "연습 모드 (올리지 않고 계획만 보기)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: daily-upload
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: uploader
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: 업로드
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          # 정기 실행은 저장소 변수 UPLOAD_ENABLED 가 true 일 때만 실제로 올려요.
+          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) || (github.event_name == 'schedule' && vars.UPLOAD_ENABLED != 'true') }}
+        run: python upload.py
