@@ -1,0 +1,18 @@
+{
+  "per_day": 27,
+  "max_per_original_per_day": 1,
+  "timezone": "Asia/Seoul",
+  "publish_start": "07:00",
+  "publish_end": "23:30",
+  "title_templates": [
+    "{name} 🥚🥔 #shorts",
+    "{name} #couple #shorts",
+    "{name} 💕 #shorts",
+    "{name} #couplegoals #shorts",
+    "{name} 😂 #shorts"
+  ],
+  "description": "Egg and Potato Couple 🥚🥔\n\n#shorts #couple #couplegoals #trend #challenge",
+  "tags": ["couple", "couple challenge", "shorts", "trend", "egg and potato"],
+  "category_id": "22",
+  "done_folder_name": "올린 영상"
+}
