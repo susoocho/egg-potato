@@ -1,8 +1,8 @@
 name: 영상 편집
 
 on:
-  push:  # TEMP: test run from this branch, remove before merge
-    branches: [claude/project-thread-w528b8]
+  schedule:
+    - cron: "47 * * * *"   # 매시간: '편집 전' 폴더에 새 영상이 있으면 편집
   workflow_dispatch:
     inputs:
       source:
@@ -38,6 +38,6 @@ jobs:
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-          EDIT_SOURCE: ${{ github.event_name == 'push' && '올린 영상/그네.mp4' || inputs.source }}
-          DRY_RUN: ${{ inputs.dry_run }}
+          EDIT_SOURCE: ${{ inputs.source }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
         run: python edit.py
