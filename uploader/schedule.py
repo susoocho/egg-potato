@@ -160,11 +160,18 @@ def fetch_recent(youtube, limit: int) -> tuple[list[Short], dict]:
     return shorts, raw
 
 
+def new_title(s: Short, cfg: dict) -> str:
+    """Template the short phone title; leave a title that already has hashtags alone."""
+    if "#" in s.title:
+        return s.title
+    return make_title(Video("", s.title + ".mp4", ""), cfg["title_templates"])
+
+
 def apply(youtube, raw: dict, s: Short, when: datetime, cfg: dict) -> None:
     sn = dict(raw["snippet"])
     st = dict(raw["status"])
     base = s.base
-    sn["title"] = make_title(Video("", s.title + ".mp4", ""), cfg["title_templates"])
+    sn["title"] = new_title(s, cfg)
     sn["description"] = cfg.get("description", "")
     sn["tags"] = list(dict.fromkeys(cfg.get("tags", []) + [TAG_PREFIX + base]))
     sn.setdefault("categoryId", cfg.get("category_id", "22"))
@@ -206,7 +213,7 @@ def main() -> int:
         print(f"주의: {len(pending) - len(todo)}개는 이번에 자리를 못 잡았어요. 다음 실행 때 다시 시도해요.")
     for s, t in todo:
         print(f"  {t.astimezone(tz).strftime('%m-%d %H:%M')}  {s.title} (올린 시각 {s.uploaded.astimezone(tz).strftime('%m-%d %H:%M')})  →  "
-              f"{make_title(Video('', s.title + '.mp4', ''), cfg['title_templates'])}")
+              f"{new_title(s, cfg)}")
     if dry:
         return 0
 

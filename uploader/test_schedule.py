@@ -22,7 +22,7 @@ def kst(t):
 
 
 def test_fills_days_in_slots():
-    shorts = [s(f"영상{i}") for i in range(4)]
+    shorts = [s(f"영상{c}") for c in "가나다라"]
     out = plan(shorts, CFG, NOW)
     assert [kst(t) for _, t in out] == ["11-28 15:00", "11-28 23:00", "11-29 07:00", "11-29 15:00"]
 
@@ -56,3 +56,10 @@ def test_rest_counts_public_videos_by_tag():
     pub = s("그네 🥚🥔 #shorts", privacy="public", up="2026-11-27T00:00:00+00:00", tags=["egp:그네"])
     out = plan([pub, s("그네 2")], CFG, NOW)
     assert kst(out[0][1]).startswith("12-03")
+
+
+def test_title_with_hashtags_is_kept():
+    from schedule import new_title
+    cfg = {"title_templates": ["{name} A"]}
+    assert new_title(Short("x", "그네2", datetime(2026, 11, 25, tzinfo=timezone.utc), "private", None), cfg) == "그네 A"
+    assert new_title(Short("x", "그네 🥚🥔 #shorts", datetime(2026, 11, 25, tzinfo=timezone.utc), "private", None), cfg) == "그네 🥚🥔 #shorts"
