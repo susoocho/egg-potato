@@ -13,6 +13,23 @@
    - 제목은 파일 이름으로 자동으로 만들어요. `아카시로_2.mp4` → `아카시로 #couple #shorts`
 3. 끝이에요. 영상이 하루 목표(27개)보다 적으면 실행 기록에 "부족해요"라고 남아요.
 
+## 음원 영상: 폰에서 비공개로 올리면 자동 예약
+
+유행 음원은 유튜브 앱에서만 붙일 수 있어서, 음원 영상은 이렇게 해요.
+
+1. 유튜브 앱에서 영상 선택 → **사운드 추가** → 제목은 `그네`처럼 짧게
+   (같은 원본의 다른 버전이면 `그네 2`, `그네 3`)
+2. 공개 설정을 **비공개**로 하고 업로드. 임시보관함은 안 돼요.
+3. 끝이에요. 매시간 `비공개 쇼츠 자동 예약`이 돌면서
+   - 제목을 틀에 맞게 바꾸고 설명, 태그를 붙이고
+   - 하루 `per_day`개씩 빈 시간에 예약을 걸어요.
+   - 같은 원본의 다음 버전은 `min_days_between_variants`일 뒤로 잡아요.
+
+계속 비공개로 두고 싶은 영상은 제목에 `#보관`을 넣으면 건드리지 않아요.
+`scheduler.since` 이전에 올린 비공개 영상도 건드리지 않아요.
+`scheduler.first_publish_date`에 날짜(예: `2026-12-26`)를 넣으면 그날부터 공개되도록 잡아요.
+잠시 멈추려면 저장소 변수 `SCHEDULER_ENABLED`를 `false`로 바꾸면 돼요.
+
 ## 설정 바꾸기 (`config.json`)
 
 | 항목 | 뜻 |
@@ -48,6 +65,7 @@
    - 로그인할 때 **Egg and Potato Couple 채널**을 골라요. "확인되지 않은 앱" 경고가 나오면
      고급 → 이동 을 누르면 돼요 (내가 만든 앱이라 괜찮아요).
    - `Exchange authorization code for tokens` → **Refresh token** 복사
+   - 자동 예약까지 쓰려면 권한에 `https://www.googleapis.com/auth/youtube` 도 같이 넣어야 해요.
 4. **GitHub에 저장** (저장소 Settings → Secrets and variables → Actions)
    - Secrets 에 4개 추가: `YT_CLIENT_ID`, `YT_CLIENT_SECRET`, `YT_REFRESH_TOKEN`, `DRIVE_FOLDER_ID`
 5. **연습 실행**: Actions 탭 → `매일 쇼츠 업로드` → Run workflow (연습 모드 체크된 채로).
